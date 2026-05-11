@@ -65,9 +65,9 @@ function calculateScore(selectedWord, allPlayers, currentPlayerId) {
 
   // 점수 계산
   if (count === 0) return 0; // 아무도 없음
-  if (count === totalPlayers) return 0; // 전원 가지고 있음
-  if (count === 1) return 0; // 본인만 있음 (나 포함 1명)
-  if (count === 2) return 4; // 나 포함 2명
+  if (count === 1) return 0; // 본인만 있음
+  if (count === 2) return 4; // 나 포함 2명 (전원 여부 상관없이 4점)
+  if (count === totalPlayers) return 0; // 3명 이상일 때 전원이면 0점
   return count; // 3명이상은 인원수만큼 점수
 }
 
