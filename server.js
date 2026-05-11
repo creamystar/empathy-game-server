@@ -17,12 +17,30 @@ const io = new Server(server, {
 // 방 목록 저장
 const rooms = {};
 
+// 1시간마다 비활성 방 자동 청소
+const ONE_HOUR = 60 * 60 * 1000;
+setInterval(() => {
+  const now = Date.now();
+  let deleted = 0;
+  Object.keys(rooms).forEach(code => {
+    const room = rooms[code];
+    if (now - room.lastActivity > ONE_HOUR) {
+      io.to(code).emit('roomClosed', { message: '1시간 동안 활동이 없어 방이 닫혔습니다.' });
+      io.socketsLeave(code);
+      delete rooms[code];
+      deleted++;
+    }
+  });
+  if (deleted > 0) console.log(`[청소] ${deleted}개 방 삭제됨. 현재 방 수: ${Object.keys(rooms).length}`);
+}, ONE_HOUR);
+
 // 랜덤 주제 목록
 const randomTopics = [
   '여름휴가', '좋아하는음식', '스트레스해소법', '주말에하는것', '버킷리스트',
   '무인도에가져갈것', '행복한순간', '두려운것', '갖고싶은능력', '존경하는사람',
   '가고싶은나라', '좋아하는계절', '어릴때꿈', '최근본영화', '좋아하는운동',
-  '아침에일어나면', '자기전에하는것', '친구에게선물한다면', '나를표현하는단어', '10년후내모습'
+  '아침에일어나면', '자기전에하는것', '친구에게선물한다면', '나를표현하는단어', '10년후내모습',
+  '여행','시간','노랑','빨강','파랑','보라','사랑','행복','친구','봄','여름','가을','겨울'
 ];
 
 function generateRoomCode() {
@@ -66,6 +84,7 @@ io.on('connection', (socket) => {
       title: title || '공감 게임',
       password: password || '',
       host: socket.id,
+      lastActivity: Date.now(),
       players: [{
         id: socket.id,
         nickname,
@@ -109,6 +128,7 @@ io.on('connection', (socket) => {
       usedWords: [],
       joinOrder: room.players.length
     });
+    room.lastActivity = Date.now();
 
     socket.join(roomCode);
     socket.roomCode = roomCode;
@@ -143,6 +163,7 @@ io.on('connection', (socket) => {
 
     room.status = 'playing';
     room.gamePhase = 'topic';
+    room.lastActivity = Date.now();
 
     // 순서 설정: 첫 라운드는 입장 순서
     room.players.sort((a, b) => a.joinOrder - b.joinOrder);
@@ -235,6 +256,7 @@ io.on('connection', (socket) => {
     if (!currentPlayer.words.includes(word)) return socket.emit('selectError', '본인의 단어가 아닙니다.');
 
     currentPlayer.usedWords.push(word);
+    room.lastActivity = Date.now();
 
     // 점수 계산
     const score = calculateScore(word, room.players, socket.id);
