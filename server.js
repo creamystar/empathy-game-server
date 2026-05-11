@@ -224,6 +224,10 @@ io.on('connection', (socket) => {
 
     if (cleanWords.length !== 10) return socket.emit('wordsError', '단어를 10개 모두 입력해주세요.');
 
+    // 중복 단어 체크
+    const uniqueWords = new Set(cleanWords);
+    if (uniqueWords.size !== 10) return socket.emit('wordsError', '중복된 단어가 있어요. 10개 모두 다르게 입력해주세요.');
+
     player.words = cleanWords;
     player.wordsSubmitted = true;
 
